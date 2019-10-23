@@ -37,11 +37,15 @@ class StoryItem {
 
   /// The page content
   final Widget view;
+  final Widget topActionBar;
+  final Widget bottomActionBar;
 
   StoryItem(
     this.view, {
-    this.duration = const Duration(seconds: 3),
-    this.shown = false,
+    this.duration, //= const Duration(seconds: 10),
+        this.topActionBar,
+        this.bottomActionBar,
+        this.shown = false,
   }) : assert(duration != null, "[duration] should not be null");
 
   /// Short hand to create text-only page.
@@ -59,6 +63,9 @@ class StoryItem {
     double fontSize = 18,
     bool roundedTop = false,
     bool roundedBottom = false,
+        Duration duration,
+        Widget topActionBar,
+        Widget bottomActionBar,
   }) {
     double contrast = ContrastHelper.contrast([
       backgroundColor.red,
@@ -95,7 +102,10 @@ class StoryItem {
           ),
           //color: backgroundColor,
         ),
-        shown: shown);
+        shown: shown,
+        duration: duration ?? Duration(seconds: 10),
+        topActionBar: topActionBar,
+        bottomActionBar: bottomActionBar);
   }
 
   /// Shorthand for a full-page image content.
@@ -106,6 +116,9 @@ class StoryItem {
     BoxFit imageFit = BoxFit.fitWidth,
     String caption,
     bool shown = false,
+        Duration duration,
+        Widget bottomActionBar,
+        Widget topActionBar,
   }) {
     assert(imageFit != null, "[imageFit] should not be null");
     return StoryItem(
@@ -151,7 +164,11 @@ class StoryItem {
             ],
           ),
         ),
-        shown: shown);
+        shown: shown,
+        topActionBar: topActionBar,
+        bottomActionBar: bottomActionBar,
+        duration: duration ?? Duration(seconds: 10)
+    );
   }
 
   /// Shorthand for creating inline image page.
@@ -161,6 +178,9 @@ class StoryItem {
     bool shown = false,
     bool roundedTop = true,
     bool roundedBottom = false,
+        Duration duration,
+        Widget bottomActionBar,
+        Widget topActionBar,
   }) {
     return StoryItem(
       Container(
@@ -192,6 +212,9 @@ class StoryItem {
         ),
       ),
       shown: shown,
+      topActionBar: topActionBar,
+      bottomActionBar: bottomActionBar,
+      duration: duration ?? Duration(seconds: 10),
     );
   }
 
@@ -201,6 +224,9 @@ class StoryItem {
     BoxFit imageFit = BoxFit.fitWidth,
     String caption,
     bool shown = false,
+        Duration duration,
+        Widget topActionBar,
+        Widget bottomActionBar,
     Map<String, dynamic> requestHeaders,
   }) {
     assert(imageFit != null, "[imageFit] should not be null");
@@ -245,7 +271,11 @@ class StoryItem {
             ],
           ),
         ),
-        shown: shown);
+        shown: shown,
+        bottomActionBar: bottomActionBar,
+        topActionBar: topActionBar,
+        duration: duration ?? Duration(seconds: 10)
+    );
   }
 
   /// Shorthand for creating inline image page.
@@ -258,6 +288,9 @@ class StoryItem {
     bool shown = false,
     bool roundedTop = true,
     bool roundedBottom = false,
+        Duration duration,
+        Widget bottomActionBar,
+        Widget topActionBar,
   }) {
     return StoryItem(
       Container(
@@ -299,6 +332,67 @@ class StoryItem {
         ),
       ),
       shown: shown,
+      bottomActionBar: bottomActionBar,
+      topActionBar: topActionBar,
+      duration: duration ?? Duration(seconds: 10),
+    );
+  }
+
+  static StoryItem inlineVideo(
+      String url, {
+        Text caption,
+        StoryController controller,
+        BoxFit imageFit = BoxFit.fitWidth,
+        Map<String, dynamic> requestHeaders,
+        bool shown = false,
+        bool roundedTop = true,
+        bool roundedBottom = false,
+        Duration duration,
+        Widget bottomActionBar,
+        Widget topActionBar,
+      }) {
+    return StoryItem(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(roundedTop ? 8 : 0),
+            bottom: Radius.circular(roundedBottom ? 8 : 0),
+          ),
+        ),
+        child: Container(
+          color: Colors.black,
+          child: Stack(
+            children: <Widget>[
+              StoryVideo.url(
+                url,
+                controller: controller,
+                requestHeaders: requestHeaders,
+              ),
+              Container(
+                margin: EdgeInsets.only(
+                  bottom: 16,
+                ),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    child: caption == null ? SizedBox() : caption,
+                    width: double.infinity,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      shown: shown,
+      bottomActionBar: bottomActionBar,
+      topActionBar: topActionBar,
+      duration: duration ?? Duration(seconds: 10),
     );
   }
 
@@ -309,6 +403,8 @@ class StoryItem {
     BoxFit imageFit = BoxFit.fitWidth,
     String caption,
     bool shown = false,
+        Widget bottomActionBar,
+        Widget topActionBar,
     Map<String, dynamic> requestHeaders,
   }) {
     assert(imageFit != null, "[imageFit] should not be null");
@@ -353,6 +449,8 @@ class StoryItem {
           ),
         ),
         shown: shown,
+        topActionBar: topActionBar,
+        bottomActionBar: bottomActionBar,
         duration: duration ?? Duration(seconds: 10));
   }
 }
@@ -389,7 +487,7 @@ class StoryView extends StatefulWidget {
     this.controller,
     this.onComplete,
     this.onStoryShow,
-    this.progressPosition = ProgressPosition.top,
+    this.progressPosition,
     this.repeat = false,
     this.inline = false,
   })  : assert(storyItems != null && storyItems.length > 0,
@@ -571,6 +669,25 @@ class StoryViewState extends State<StoryView> with TickerProviderStateMixin {
     this.animationController?.forward();
   }
 
+  void onTapDown(details) {
+    pause();
+    debouncer?.cancel();
+    debouncer = Timer(Duration(milliseconds: 500), () {});
+  }
+
+  void onTapUp(details) {
+    if (debouncer?.isActive == true) {
+      debouncer.cancel();
+      debouncer = null;
+
+      goForward();
+    } else {
+      debouncer.cancel();
+      debouncer = null;
+      unpause();
+    }
+  }
+
   void controlPause() {
     if (widget.controller != null) {
       widget.controller.pause();
@@ -587,9 +704,8 @@ class StoryViewState extends State<StoryView> with TickerProviderStateMixin {
     }
   }
 
-  Widget get currentView => widget.storyItems
-      .firstWhere((it) => !it.shown, orElse: () => widget.storyItems.last)
-      .view;
+  StoryItem get currentstoryItem =>
+      widget.storyItems.firstWhere((it) => !it.shown, orElse: () => widget.storyItems.last);
 
   @override
   Widget build(BuildContext context) {
@@ -597,80 +713,95 @@ class StoryViewState extends State<StoryView> with TickerProviderStateMixin {
       color: Colors.white,
       child: Stack(
         children: <Widget>[
-          currentView,
-          Align(
-            alignment: widget.progressPosition == ProgressPosition.top
-                ? Alignment.topCenter
-                : Alignment.bottomCenter,
-            child: SafeArea(
-              bottom: widget.inline ? false : true,
-              // we use SafeArea here for notched and bezeles phones
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: PageBar(
-                  widget.storyItems
-                      .map((it) => PageData(it.duration, it.shown))
-                      .toList(),
-                  this.currentAnimation,
-                  key: UniqueKey(),
-                  indicatorHeight: widget.inline
-                      ? IndicatorHeight.small
-                      : IndicatorHeight.large,
+          currentstoryItem.view,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              Align(
+                alignment: widget.progressPosition == ProgressPosition.top
+                    ? Alignment.topCenter
+                    : Alignment.bottomCenter,
+                child: SafeArea(
+                  bottom: widget.inline ? false : true,
+                  // we use SafeArea here for notched and bezels phones
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: PageBar(
+                      widget.storyItems.map((it) => PageData(it.duration, it.shown)).toList(),
+                      this.currentAnimation,
+                      key: UniqueKey(),
+                      indicatorHeight:
+                      widget.inline ? IndicatorHeight.small : IndicatorHeight.large,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            heightFactor: 1,
-            child: RawGestureDetector(
-              gestures: <Type, GestureRecognizerFactory>{
-                TapGestureRecognizer:
-                    GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
-                        () => TapGestureRecognizer(), (instance) {
-                  instance
-                    ..onTapDown = (details) {
-                      controlPause();
-                      debouncer?.cancel();
-                      debouncer = Timer(Duration(milliseconds: 500), () {});
-                    }
-                    ..onTapUp = (details) {
-                      if (debouncer?.isActive == true) {
-                        debouncer.cancel();
-                        debouncer = null;
-
-                        goForward();
-                      } else {
-                        debouncer.cancel();
-                        debouncer = null;
-
-                        controlUnpause();
-                      }
-                    };
-                })
-              },
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            heightFactor: 1,
-            child: SizedBox(
-              child: GestureDetector(
-                onTap: () {
-                  goBack();
-                },
+              currentstoryItem.topActionBar != null
+                  ? Container(
+                child: InkWell(
+                  onTapDown: onTapDown,
+                  child: currentstoryItem.topActionBar,
+                ),
+              )
+                  : Container(),
+              Flexible(
+                child: Stack(
+                  children: <Widget>[
+                    Align(
+                      alignment: Alignment.topRight,
+                      heightFactor: 1,
+                      child: Container(
+                        child: RawGestureDetector(
+                          gestures: <Type, GestureRecognizerFactory>{
+                            TapGestureRecognizer:
+                            GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+                                    () => TapGestureRecognizer(), (instance) {
+                              instance
+                                ..onTapDown = onTapDown
+                                ..onTapUp = onTapUp;
+                            }),
+                          },
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.topLeft,
+                      heightFactor: 1,
+                      child: Container(
+                        child: GestureDetector(
+                          onTap: () {
+                            goBack();
+                          },
+                        ),
+                        width: 100,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              width: 70,
-            ),
+              currentstoryItem.bottomActionBar != null
+                  ? SafeArea(
+                child: Container(
+                  child: InkWell(
+                    onTapDown: onTapDown,
+                    child: currentstoryItem.bottomActionBar,
+                  ),
+                ),
+              )
+                  : Container(),
+            ],
           ),
         ],
       ),
     );
   }
 }
+
 
 /// Capsule holding the duration and shown property of each story. Passed down
 /// to the pages bar to render the page indicators.
