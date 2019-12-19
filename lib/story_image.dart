@@ -30,10 +30,10 @@ class ImageLoader {
     }
 
     final fileStream =
-        DefaultCacheManager().getFile(this.url, headers: this.requestHeaders);
+    DefaultCacheManager().getFile(this.url, headers: this.requestHeaders);
 
     fileStream.listen(
-      (fileInfo) {
+          (fileInfo) {
         // the reason for this is that, when the cache manager fetches
         // the image again from network, the provided `onComplete` should
         // not be called again
@@ -46,10 +46,10 @@ class ImageLoader {
         this.state = LoadState.success;
 
         PaintingBinding.instance.instantiateImageCodec(imageBytes).then(
-            (codec) {
-          this.frames = codec;
-          onComplete();
-        }, onError: (error) {
+                (codec) {
+              this.frames = codec;
+              onComplete();
+            }, onError: (error) {
           this.state = LoadState.failure;
           onComplete();
         });
@@ -72,16 +72,14 @@ class StoryImage extends StatefulWidget {
 
   final StoryController controller;
 
-  StoryImage(
-    this.imageLoader, {
+  StoryImage(this.imageLoader, {
     Key key,
     this.controller,
     this.fit,
   }) : super(key: key ?? UniqueKey());
 
   /// Use this shorthand to fetch images/gifs from the provided [url]
-  static StoryImage url(
-    String url, {
+  static StoryImage url(String url, {
     StoryController controller,
     Map<String, dynamic> requestHeaders,
     BoxFit fit = BoxFit.fitWidth,
@@ -115,17 +113,17 @@ class StoryImageState extends State<StoryImage> {
     if (widget.controller != null) {
       this._streamSubscription =
           widget.controller.playbackNotifier.listen((playbackState) {
-        // for the case of gifs we need to pause/play
-        if (widget.imageLoader.frames == null) {
-          return;
-        }
+            // for the case of gifs we need to pause/play
+            if (widget.imageLoader.frames == null) {
+              return;
+            }
 
-        if (playbackState == PlaybackState.pause) {
-          this._timer?.cancel();
-        } else {
-          forward();
-        }
-      });
+            if (playbackState == PlaybackState.pause) {
+              this._timer?.cancel();
+            } else {
+              forward();
+            }
+          });
     }
 
     widget.controller?.pause();
@@ -187,11 +185,11 @@ class StoryImageState extends State<StoryImage> {
       case LoadState.failure:
         return Center(
             child: Text(
-          "Image failed to load.",
-          style: TextStyle(
-            color: Colors.white,
-          ),
-        ));
+              "Image failed to load.",
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ));
       default:
         return Center(
           child: Container(

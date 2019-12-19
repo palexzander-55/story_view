@@ -26,7 +26,7 @@ class VideoLoader {
     }
 
     final fileStream =
-        DefaultCacheManager().getFile(this.url, headers: this.requestHeaders);
+    DefaultCacheManager().getFile(this.url, headers: this.requestHeaders);
 
     fileStream.listen((fileInfo) {
       if (this.videoFile == null) {
@@ -47,8 +47,8 @@ class StoryVideo extends StatefulWidget {
 
   static StoryVideo url(String url,
       {StoryController controller,
-      Map<String, dynamic> requestHeaders,
-      Key key}) {
+        Map<String, dynamic> requestHeaders,
+        Key key}) {
     return StoryVideo(
       VideoLoader(url, requestHeaders: requestHeaders),
       storyController: controller,
@@ -86,12 +86,12 @@ class StoryVideoState extends State<StoryVideo> {
         if (widget.storyController != null) {
           _streamSubscription =
               widget.storyController.playbackNotifier.listen((playbackState) {
-            if (playbackState == PlaybackState.pause) {
-              playerController.pause();
-            } else {
-              playerController.play();
-            }
-          });
+                if (playbackState == PlaybackState.pause) {
+                  playerController.pause();
+                } else {
+                  playerController.play();
+                }
+              });
         }
       } else {
         setState(() {});
@@ -112,22 +112,22 @@ class StoryVideoState extends State<StoryVideo> {
 
     return widget.videoLoader.state == LoadState.loading
         ? Center(
-            child: Container(
-              width: 70,
-              height: 70,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 3,
-              ),
-            ),
-          )
+      child: Container(
+        width: 70,
+        height: 70,
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          strokeWidth: 3,
+        ),
+      ),
+    )
         : Center(
-            child: Text(
-            "Media failed to load.",
-            style: TextStyle(
-              color: Colors.white,
-            ),
-          ));
+        child: Text(
+          "Media failed to load.",
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ));
   }
 
   @override
